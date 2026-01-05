@@ -4,6 +4,8 @@ GO
 /*
     Tabla tipos de hoteles (hotel,hostal,casa,departamente,etc)
 */
+USE SistemaHotelero
+GO
 
 CREATE TABLE TiposHoteles(
     TipoHotelID INT IDENTITY,

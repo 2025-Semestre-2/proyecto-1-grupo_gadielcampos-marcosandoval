@@ -1,3 +1,14 @@
+USE master;
+GO
+
+-- 1. Forzar cierre de conexiones y borrar si existe
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'SistemaHotelero')
+BEGIN
+    ALTER DATABASE SistemaHotelero SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE SistemaHotelero;
+END
+GO
+
 CREATE DATABASE SistemaHotelero
 GO
 
@@ -11,7 +22,7 @@ CREATE TABLE TiposHoteles(
     TipoHotelID INT IDENTITY,
     Nombre VARCHAR (128) NOT NULL,
     -- Restriciones
-    CONSTRAINT PK_TipoHotelID PRIMARY KEY (TipoHotelID)
+    CONSTRAINT PK_TipoHotel PRIMARY KEY (TipoHotelID)
 );
 
 /*
@@ -22,7 +33,7 @@ CREATE TABLE RedesSociales (
     Nombre VARCHAR(64),
 
     --Restricciones
-    CONSTRAINT PK_RedSocialID PRIMARY KEY (RedSocialID) 
+    CONSTRAINT PK_RedSocial PRIMARY KEY (RedSocialID) 
 );
 
 /*
@@ -34,7 +45,7 @@ CREATE TABLE Servicios (
     Nombre VARCHAR(64),
 
     --Restricciones
-    CONSTRAINT PK_ServicioID PRIMARY KEY (ServicioID) 
+    CONSTRAINT PK_Servicio PRIMARY KEY (ServicioID) 
 );
 
 
@@ -52,8 +63,8 @@ CREATE TABLE EmpresasHoteleras (
     Barrio VARCHAR(64),
     OtrasSenas VARCHAR(MAX),
     -- Restriciones
-    CONSTRAINT PK_Empresa PRIMARY KEY (EmpresaID),
-    CONSTRAINT FK_Tipo FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID)
+    CONSTRAINT PK_EmpresaHotelera PRIMARY KEY (EmpresaID),
+    CONSTRAINT FK_Tipo_Empresa FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID)
 );
 --AQUI FALTAN LOS ATRIBUTOS MULTIVALORADOS Y TIPO,
 --UNA OPCION ES HACER OTRAS TABLAS PERO YA VEREMOS
@@ -70,8 +81,8 @@ CREATE TABLE DireccionesElectronicasEmpresa (
     URL_Empresa VARCHAR(128) NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_URL_ID PRIMARY KEY (URL_ID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
+    CONSTRAINT PK_URL PRIMARY KEY (URL_ID),
+    CONSTRAINT FK_URL_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
     CONSTRAINT UQ_URL_EMPRESA UNIQUE (URL_EMPRESA)
 );
 
@@ -85,8 +96,8 @@ CREATE TABLE RedesSocialesEmpresa (
     Red_URL VARCHAR(256) NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_Empresa_Redes_ID PRIMARY KEY (EmpresaID,RedSocialID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
+    CONSTRAINT PK_Empresa_Redes PRIMARY KEY (EmpresaID,RedSocialID),
+    CONSTRAINT FK_RedSocial_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
     CONSTRAINT FK_RedSocialID FOREIGN KEY (RedSocialID) REFERENCES RedesSociales(RedSocialID)
 );
 
@@ -101,9 +112,9 @@ CREATE TABLE ServiciosHotel (
     ServicioID INT NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_Empresa_Servicios_ID PRIMARY KEY (EmpresaID,ServicioID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
-    CONSTRAINT FK_ServicioID FOREIGN KEY (ServicioID) REFERENCES Servicios(ServicioID)
+    CONSTRAINT PK_Empresa_ServiciosHoteleros PRIMARY KEY (EmpresaID,ServicioID),
+    CONSTRAINT FK_Servicios_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
+    CONSTRAINT FK_Servicio_Hotel FOREIGN KEY (ServicioID) REFERENCES Servicios(ServicioID)
 );
 
 
@@ -117,7 +128,7 @@ CREATE TABLE TelefonoEmpresa (
 
     --Restricciones
     CONSTRAINT PK_Telefono PRIMARY KEY (TelefonoID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
+    CONSTRAINT FK_Telefono_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
     CONSTRAINT UQ_Telefono_Num UNIQUE (TelefonoNum)
 );
 
@@ -129,7 +140,7 @@ CREATE TABLE TiposHabitaciones(
     TipoHabitacionID INT IDENTITY,
     Nombre VARCHAR (128) NOT NULL,
     -- Restriciones
-    CONSTRAINT PK_TipoHabitacionID PRIMARY KEY (TipoHabitacionID)
+    CONSTRAINT PK_TipoHabitacion PRIMARY KEY (TipoHabitacionID)
 );
 
 
@@ -137,14 +148,14 @@ CREATE TABLE TiposCamas(
     TipoCamaID INT IDENTITY,
     Nombre VARCHAR (128) NOT NULL,
     -- Restriciones
-    CONSTRAINT PK_TipoCamaID PRIMARY KEY (TipoCamaID)
+    CONSTRAINT PK_TipoCama PRIMARY KEY (TipoCamaID)
 );
 
 CREATE TABLE TiposComodidades(
     TipoComodidadID INT IDENTITY,
     Nombre VARCHAR (128) NOT NULL,
     -- Restriciones
-    CONSTRAINT PK_TipoComodidadID PRIMARY KEY (TipoComodidadID)
+    CONSTRAINT PK_TipoComodidad PRIMARY KEY (TipoComodidadID)
 );
 
 
@@ -161,26 +172,36 @@ CREATE TABLE Habitaciones(
     Descripcion VARCHAR(256),
 
     -- Restriciones
-    CONSTRAINT PK_HabitacionID PRIMARY KEY (HabitacionID),
+    CONSTRAINT PK_Habitacion PRIMARY KEY (HabitacionID),
     CONSTRAINT FK_TipoID FOREIGN KEY (TipoHabitacionID) REFERENCES TiposHabitaciones(TipoHabitacionID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID)
+    CONSTRAINT FK_Habitacion_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID)
 );
-
+--AGREGAR ID DEL TIPO DE CAMA
 
 
 /*
     TABLA DE CONEXION HABITACIONES - TIPOS DE CAMAS (Relacion M:N)?? 
     **REVISAR
 */
-CREATE TABLE CamasHabitaciones (
+
+/*CREATE TABLE CamasHabitaciones (
     HabitacionID INT NOT NULL,
     CamaID INT NOT NULL,
 
     --Restricciones
     CONSTRAINT PK_Camas_Habitaciones PRIMARY KEY (HabitacionID,CamaID),
-    CONSTRAINT FK_HabitacionID FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+    CONSTRAINT FK_Camas_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
     CONSTRAINT FK_CamaID FOREIGN KEY (CamaID) REFERENCES TiposCamas(TipoCamaID)
 );
+
+
+ESTO DE ARRIBA LO VOY A COMENTAR TODO PORQUE NO TIENE MUCHO SENTIDO
+ESTO PROQUE SOLO ES UNA HABITACION, Y SOLO HARIA FALTA TENER EL IDTIPO CAMA
+COMO FK EN LA HABITACION
+
+
+
+*/
 
 
 /*
@@ -193,7 +214,7 @@ CREATE TABLE CamasHabitaciones (
 
         --Restricciones
         CONSTRAINT PK_Habitacion_Comodidades PRIMARY KEY (HabitacionID, ComodidadID),
-        CONSTRAINT FK_HabitacionID FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+        CONSTRAINT FK_Comodidades_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
         CONSTRAINT FK_ComodidadID FOREIGN KEY (ComodidadID) REFERENCES TiposComodidades(TipoComodidadID)
 );
 
@@ -207,8 +228,8 @@ CREATE TABLE FotosHabitacion (
     Foto VARCHAR(16) NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_FotoID PRIMARY KEY (FotoID),
-    CONSTRAINT FK_HabitacionID FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+    CONSTRAINT PK_Foto PRIMARY KEY (FotoID),
+    CONSTRAINT FK_Fotos_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
     CONSTRAINT UQ_Foto UNIQUE (Foto)
 );
 
@@ -302,13 +323,14 @@ CREATE TABLE TipoActividad (
     Descripcion VARCHAR(128) NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_ActividadID PRIMARY KEY (ActividadID) 
+    CONSTRAINT PK_Actividad PRIMARY KEY (ActividadID) 
 );
 
 CREATE TABLE EmpresasRecreativas (
     EmpresaID INT IDENTITY,
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
+    Precio DECIMAL(10,2) NOT NULL,
 
     --Contacto
     CorreoElectronico VARCHAR(256) NOT NULL UNIQUE,
@@ -322,7 +344,7 @@ CREATE TABLE EmpresasRecreativas (
     OtrasSenas VARCHAR(MAX),
 
     -- Restriciones
-    CONSTRAINT PK_Empresa PRIMARY KEY (EmpresaID)
+    CONSTRAINT PK_EmpresaRecreativa PRIMARY KEY (EmpresaID)
 );
 
 
@@ -334,9 +356,9 @@ CREATE TABLE ServiciosRecreativa (  --Usar la misma tabla que usa la empresa hot
     ServicioID INT NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_Empresa_Servicios_ID PRIMARY KEY (EmpresaID,ServicioID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasRecreativas(EmpresaID),
-    CONSTRAINT FK_ServicioID FOREIGN KEY (ServicioID) REFERENCES Servicios(ServicioID)
+    CONSTRAINT PK_Empresa_ServiciosRecrativos PRIMARY KEY (EmpresaID,ServicioID),
+    CONSTRAINT FK_Servicios_Recreativa FOREIGN KEY (EmpresaID) REFERENCES EmpresasRecreativas(EmpresaID),
+    CONSTRAINT FK_Servicio_Recreativa FOREIGN KEY (ServicioID) REFERENCES Servicios(ServicioID)
 );
 
 
@@ -349,6 +371,6 @@ CREATE TABLE Actividad_Recreativa (
 
     --Restricciones
     CONSTRAINT PK_Recreativa_Actividades_ID PRIMARY KEY (EmpresaID,ActividadID),
-    CONSTRAINT FK_EmpresaID FOREIGN KEY (EmpresaID) REFERENCES EmpresasRecreativas(EmpresaID),
+    CONSTRAINT FK_Actividad_Recreativa FOREIGN KEY (EmpresaID) REFERENCES EmpresasRecreativas(EmpresaID),
     CONSTRAINT FK_ActividadID FOREIGN KEY (ActividadID) REFERENCES TipoActividad(ActividadID)
 );

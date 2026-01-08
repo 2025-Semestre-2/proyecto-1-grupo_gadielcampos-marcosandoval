@@ -20,7 +20,7 @@ GO
 
 CREATE TABLE TiposHoteles(
     TipoHotelID INT IDENTITY,
-    Nombre VARCHAR (128) NOT NULL,
+    Nombre VARCHAR (128) NOT NULL UNIQUE,
     -- Restriciones
     CONSTRAINT PK_TipoHotel PRIMARY KEY (TipoHotelID)
 );
@@ -30,7 +30,7 @@ CREATE TABLE TiposHoteles(
 */
 CREATE TABLE RedesSociales (
     RedSocialID INT NOT NULL IDENTITY,
-    Nombre VARCHAR(64),
+    Nombre VARCHAR(64) UNIQUE,
 
     --Restricciones
     CONSTRAINT PK_RedSocial PRIMARY KEY (RedSocialID) 
@@ -42,7 +42,7 @@ CREATE TABLE RedesSociales (
 
 CREATE TABLE Servicios (
     ServicioID INT NOT NULL IDENTITY,
-    Nombre VARCHAR(64),
+    Nombre VARCHAR(64) UNIQUE,
 
     --Restricciones
     CONSTRAINT PK_Servicio PRIMARY KEY (ServicioID) 
@@ -55,7 +55,7 @@ CREATE TABLE EmpresasHoteleras (
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
     Tipo INT NOT NULL,
-    CorreoElectronico VARCHAR(256) UNIQUE,
+    CorreoElectronico VARCHAR(256) UNIQUE NOT NULL,
     -- Dirección (Atributo Compuesto Expandido)
     Provincia VARCHAR(64),
     Canton VARCHAR(64),
@@ -65,6 +65,9 @@ CREATE TABLE EmpresasHoteleras (
     -- Restriciones
     CONSTRAINT PK_EmpresaHotelera PRIMARY KEY (EmpresaID),
     CONSTRAINT FK_Tipo_Empresa FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID)
+
+    CONSTRAINT CHK_JuridicaHotelera CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12)
+    CONSTRAINT CHK_Correo_Hotelera CHECK (CorreoElectronico LIKE '%@%.%')
 );
 --AQUI FALTAN LOS ATRIBUTOS MULTIVALORADOS Y TIPO,
 --UNA OPCION ES HACER OTRAS TABLAS PERO YA VEREMOS
@@ -129,7 +132,10 @@ CREATE TABLE TelefonoEmpresa (
     --Restricciones
     CONSTRAINT PK_Telefono PRIMARY KEY (TelefonoID),
     CONSTRAINT FK_Telefono_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
-    CONSTRAINT UQ_Telefono_Num UNIQUE (TelefonoNum)
+    CONSTRAINT UQ_Telefono_Num UNIQUE (TelefonoNum),
+
+    --Formato: +560 [2000 0000 - 9999 9999]
+    CONSTRAINT CHK_TelefonoHotelera CHECK (TelefonoNum BETWEEN 56020000000 and 56099999999)
 );
 
 
@@ -138,7 +144,7 @@ CREATE TABLE TelefonoEmpresa (
 
 CREATE TABLE TiposHabitaciones(
     TipoHabitacionID INT IDENTITY,
-    Nombre VARCHAR (128) NOT NULL,
+    Nombre VARCHAR (128) NOT NULL UNIQUE,
     -- Restriciones
     CONSTRAINT PK_TipoHabitacion PRIMARY KEY (TipoHabitacionID)
 );
@@ -146,14 +152,14 @@ CREATE TABLE TiposHabitaciones(
 
 CREATE TABLE TiposCamas(
     TipoCamaID INT IDENTITY,
-    Nombre VARCHAR (128) NOT NULL,
+    Nombre VARCHAR (128) NOT NULL UNIQUE,
     -- Restriciones
     CONSTRAINT PK_TipoCama PRIMARY KEY (TipoCamaID)
 );
 
-CREATE TABLE TiposComodidades(
+CREATE TABLE TiposComodidades (
     TipoComodidadID INT IDENTITY,
-    Nombre VARCHAR (128) NOT NULL,
+    Nombre VARCHAR (128) NOT NULL UNIQUE,
     -- Restriciones
     CONSTRAINT PK_TipoComodidad PRIMARY KEY (TipoComodidadID)
 );
@@ -161,27 +167,27 @@ CREATE TABLE TiposComodidades(
 
 
 CREATE TABLE Habitaciones(
-    HabitacionID INT IDENTITY,
     EmpresaID INT NOT NULL,
+    NumeroHabitacion INT NOT NULL UNIQUE,
     TipoHabitacionID INT NOT NULL,
-    
-    NumeroHabitacion INT NOT NULL,
+
     Precio DECIMAL(10, 2) NOT NULL,
     Estado VARCHAR(32) DEFAULT 'Activo',
     Nombre VARCHAR(128),
     Descripcion VARCHAR(256),
 
     -- Restriciones
-    CONSTRAINT PK_Habitacion PRIMARY KEY (HabitacionID),
+    CONSTRAINT PK_Habitacion PRIMARY KEY (EmpresaID,NumeroHabitacion),
     CONSTRAINT FK_TipoID FOREIGN KEY (TipoHabitacionID) REFERENCES TiposHabitaciones(TipoHabitacionID),
     CONSTRAINT FK_Habitacion_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID)
+
+    CONSTRAINT CHK_PrecioHabitacion CHECK (Precio > 0)
+    CONSTRAINT CHK_EstadoHabitacion CHECK (Estado = 'Activo' OR ESTADO = 'Inactivo')
 );
---AGREGAR ID DEL TIPO DE CAMA
 
 
 /*
     TABLA DE CONEXION HABITACIONES - TIPOS DE CAMAS (Relacion M:N)?? 
-    **REVISAR
 */
 
 CREATE TABLE CamasHabitaciones (
@@ -193,6 +199,7 @@ CREATE TABLE CamasHabitaciones (
     CONSTRAINT FK_Camas_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
     CONSTRAINT FK_CamaID FOREIGN KEY (CamaID) REFERENCES TiposCamas(TipoCamaID)
 );
+
 
 
 /*
@@ -221,10 +228,10 @@ CREATE TABLE FotosHabitacion (
     --Restricciones
     CONSTRAINT PK_Foto PRIMARY KEY (FotoID),
     CONSTRAINT FK_Fotos_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
-    CONSTRAINT UQ_Foto UNIQUE (Foto)
+
+    --Formato: Se valida extension y que al menos tenga un caracter aparte de los 4 de extension
+    CONSTRAINT UQ_Foto UNIQUE (LEN(Foto) > 4 AND (Foto LIKE '%.jpg' OR Foto LIKE '%.jpeg' OR Foto LIKE '%.png')
 );
-
-
 
 
 --Comienza entidad cliente
@@ -232,7 +239,7 @@ CREATE TABLE FotosHabitacion (
 CREATE TABLE Cliente (
     ClienteID INT IDENTITY,
     TipoIdentificacion VARCHAR(32) NOT NULL,
-    Identificacion VARCHAR(64) NOT NULL ,
+    Identificacion VARCHAR(64) NOT NULL,
 
     FechaNacimiento DATE, -- formato: YYYY-MM-DD
     PaisResidencia VARCHAR(64),
@@ -252,6 +259,37 @@ CREATE TABLE Cliente (
     CONSTRAINT PK_Cliente PRIMARY KEY (ClienteID),
     CONSTRAINT UQ_Cliente_ID UNIQUE (Identificacion)
 
+    --Fecha entre 1990 y la fecha de hoy (Evitar fechas futuras)
+    CONSTRAINT CHK_NacimientoClient CHECK (FechaNacimiento BETWEEN '1900-01-01' AND GETDATE())
+
+/*
+    CONSTRAINT CHK_TipoIdentificacion
+        CHECK (TipoIdentificacion IN ('CEDULA', 'DIMEX', 'PASAPORTE','LicenciaDeConducir'),
+
+    CONSTRAINT CHK_IdentificacionCliente CHECK (
+    CASE 
+        -- Cédula física (9 dígitos)
+        WHEN TipoID = CEDULA 
+             AND Identificacion NOT LIKE '%[^0-9]%' 
+             AND LEN(Identificacion) = 9 THEN 1
+        
+        -- Pasaporte (alfanumérico 6–15)
+        WHEN TipoID = PASAPORTE
+             AND Identificacion NOT LIKE '%[^A-Za-z0-9]%' 
+             AND LEN(Identificacion) BETWEEN 6 AND 15 THEN 1
+        
+        -- DIMEX (11–12 dígitos)
+        WHEN TipoID = DIMEX
+             AND Identificacion NOT LIKE '%[^0-9]%' 
+             AND LEN(Identificacion) BETWEEN 11 AND 12 THEN 1
+        
+        -- Licencia de conducir (9 alfanuméricos)
+        WHEN TipoID = LicenciaDeConducir
+             AND Identificacion NOT LIKE '%[^A-Za-z0-9]%' 
+             AND LEN(Identificacion) = 9 THEN 1
+        
+*/
+
 );
 
 CREATE TABLE Cliente_Telefonos (
@@ -260,6 +298,10 @@ CREATE TABLE Cliente_Telefonos (
     -- Restriciones
     CONSTRAINT PK_Cliente_Telefonos PRIMARY KEY (ClienteID, Telefono),
     CONSTRAINT FK_Telefonos_Cliente FOREIGN KEY (ClienteID) REFERENCES Cliente(ClienteID)
+
+    
+    --Formato: +[Caracteres Numericos] y de un largo entre 7 y 15 digitos
+    CONSTRAINT CHK_TelefonoHotelera CHECK (TelefonoNum LIKE '+[0-9]%' AND LEN(TelefonoNum) BETWEEN 7 and 15)
 );
 
 
@@ -270,16 +312,24 @@ CREATE TABLE Reserva (
     ReservaID INT IDENTITY,
     ClienteID INT NOT NULL,
     HabitacionID INT NOT NULL,
+
     --Aqui se podria usar DATETIME, pero lo separe porque asi esta en el diagrama
     FechaEntrada DATE NOT NULL, -- formato: YYYY-MM-DD 
-    HoraEntrada TIME NOT NULL,  -- formato: HH:MM:SS
+    HoraEntrada TIME DEFAULT 14:00:00,  -- formato: HH:MM:SS
     CantPersonas INT DEFAULT 1,
     PoseeVehiculo BIT DEFAULT 0,
     NumeroDeNoches INT NOT NULL,
+
     -- Restriciones
     CONSTRAINT PK_Reserva PRIMARY KEY (ReservaID),
     CONSTRAINT FK_Reserva_Cliente FOREIGN KEY (ClienteID) REFERENCES Cliente(ClienteID),
-    CONSTRAINT FK_Reserva_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID)
+    CONSTRAINT FK_Reserva_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+
+    CONSTRAINT CHK_CantPersonasReserva CHECK (CantPersonas > 1),
+    CONSTRAINT CHK_CantNochesReserva CHECK (NumeroDeNoches >= 1),
+    CONSTRAINT CHL_PoseeVehiculo CHECK (PoseeVehiculo = 1 OR PoseeVehiculo = 0),
+    --GETDATE() da la fecha y hora del sistema, el convert toma solo el atributo DATE
+    CONSTRAINT CHK_FechaReserva CHECK (FechaEntrada > CONVERT(DATE,GETDATE()))
 );
 
 
@@ -291,16 +341,17 @@ CREATE TABLE Factura (
     NumeroDeFactura INT NOT NULL,
 
     FormatoDePago VARCHAR(32) NOT NULL,
-    FechaFacturacion DATE NOT NULL, 
-    HoraFacturacion TIME NOT NULL,
+    FechaFacturacion DATETIME DEFAULT GETDATE(),
 
-    --Se deberìa crear una tabla con cada cargo registrado o solo colocar el monto???
     CargosAdicionales INT DEFAULT 0,
 
     --Restricciones
     CONSTRAINT PK_Factura PRIMARY KEY (FacturaID),
     CONSTRAINT UQ_NumeroDeFactura UNIQUE (NumeroDeFactura),
+
     CONSTRAINT FK_Facturacion_Reserva FOREIGN KEY (ReservaID) REFERENCES Reserva(ReservaID),
+    CONSTRAINT CHK_FormaPago CHECK (FormatoDePago = 'Efectivo' OR FormatoDePago = 'SinpeMovil' OR FormatoDePago = 'Tarjeta'),
+    CONSTRAINT CHK_CargosAdicionales CHECK (CargosAdicionales >= 0)
 );
 
 
@@ -321,7 +372,6 @@ CREATE TABLE EmpresasRecreativas (
     EmpresaID INT IDENTITY,
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
-    Precio DECIMAL(10,2) NOT NULL,
 
     --Contacto
     CorreoElectronico VARCHAR(256) NOT NULL UNIQUE,
@@ -336,6 +386,13 @@ CREATE TABLE EmpresasRecreativas (
 
     -- Restriciones
     CONSTRAINT PK_EmpresaRecreativa PRIMARY KEY (EmpresaID)
+    CONSTRAINT CHK_Correo_Recreativa CHECK (CorreoElectronico LIKE '%@%.%')
+    CONSTRAINT CHK_JuridicaRecreativa CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12)
+
+    CONSTRAINT CHK_TelefonoRecreativa CHECK (TelefonoNum BETWEEN 56020000000 and 56099999999)
+    CONSTRAINT
+
+
 );
 
 

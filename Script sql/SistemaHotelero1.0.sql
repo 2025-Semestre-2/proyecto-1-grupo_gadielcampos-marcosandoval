@@ -64,9 +64,9 @@ CREATE TABLE EmpresasHoteleras (
     OtrasSenas VARCHAR(MAX),
     -- Restriciones
     CONSTRAINT PK_EmpresaHotelera PRIMARY KEY (EmpresaID),
-    CONSTRAINT FK_Tipo_Empresa FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID)
+    CONSTRAINT FK_Tipo_Empresa FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID),
 
-    CONSTRAINT CHK_JuridicaHotelera CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12)
+    CONSTRAINT CHK_JuridicaHotelera CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12),
     CONSTRAINT CHK_Correo_Hotelera CHECK (CorreoElectronico LIKE '%@%.%')
 );
 --AQUI FALTAN LOS ATRIBUTOS MULTIVALORADOS Y TIPO,
@@ -168,7 +168,7 @@ CREATE TABLE TiposComodidades (
 
 CREATE TABLE Habitaciones(
     EmpresaID INT NOT NULL,
-    NumeroHabitacion INT NOT NULL UNIQUE,
+    NumeroHabitacion INT NOT NULL,
     TipoHabitacionID INT NOT NULL,
 
     Precio DECIMAL(10, 2) NOT NULL,
@@ -179,9 +179,9 @@ CREATE TABLE Habitaciones(
     -- Restriciones
     CONSTRAINT PK_Habitacion PRIMARY KEY (EmpresaID,NumeroHabitacion),
     CONSTRAINT FK_TipoID FOREIGN KEY (TipoHabitacionID) REFERENCES TiposHabitaciones(TipoHabitacionID),
-    CONSTRAINT FK_Habitacion_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID)
+    CONSTRAINT FK_Habitacion_Empresa FOREIGN KEY (EmpresaID) REFERENCES EmpresasHoteleras(EmpresaID),
 
-    CONSTRAINT CHK_PrecioHabitacion CHECK (Precio > 0)
+    CONSTRAINT CHK_PrecioHabitacion CHECK (Precio > 0),
     CONSTRAINT CHK_EstadoHabitacion CHECK (Estado = 'Activo' OR ESTADO = 'Inactivo')
 );
 
@@ -191,12 +191,13 @@ CREATE TABLE Habitaciones(
 */
 
 CREATE TABLE CamasHabitaciones (
-    HabitacionID INT NOT NULL,
+    EmpresaID INT NOT NULL,
+    NumeroHabitacion INT NOT NULL,
     CamaID INT NOT NULL,
 
     --Restricciones
-    CONSTRAINT PK_Camas_Habitaciones PRIMARY KEY (HabitacionID,CamaID),
-    CONSTRAINT FK_Camas_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+    CONSTRAINT PK_Camas_Habitaciones PRIMARY KEY (EmpresaID,NumeroHabitacion,CamaID),
+    CONSTRAINT FK_Camas_Habitacion FOREIGN KEY (EmpresaID,NumeroHabitacion) REFERENCES Habitaciones(EmpresaID,NumeroHabitacion),
     CONSTRAINT FK_CamaID FOREIGN KEY (CamaID) REFERENCES TiposCamas(TipoCamaID)
 );
 
@@ -206,14 +207,15 @@ CREATE TABLE CamasHabitaciones (
     TABLA DE CONEXION HABITACIONES - TIPOS DE COMODIDADES (Relacion M:N)?? 
     **REVISAR
 */  
-    CREATE TABLE Habitacion_Comodidades (
-        HabitacionID INT NOT NULL,
-        ComodidadID INT NOT NULL,
+CREATE TABLE Habitacion_Comodidades (
+    EmpresaID INT NOT NULL,
+    NumeroHabitacion INT NOT NULL,
+    ComodidadID INT NOT NULL,
 
-        --Restricciones
-        CONSTRAINT PK_Habitacion_Comodidades PRIMARY KEY (HabitacionID, ComodidadID),
-        CONSTRAINT FK_Comodidades_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
-        CONSTRAINT FK_ComodidadID FOREIGN KEY (ComodidadID) REFERENCES TiposComodidades(TipoComodidadID)
+    --Restricciones
+    CONSTRAINT PK_Habitacion_Comodidades PRIMARY KEY (EmpresaID,NumeroHabitacion, ComodidadID),
+    CONSTRAINT FK_Comodidades_Habitacion FOREIGN KEY (EmpresaID,NumeroHabitacion) REFERENCES Habitaciones(EmpresaID,NumeroHabitacion),
+    CONSTRAINT FK_ComodidadID FOREIGN KEY (ComodidadID) REFERENCES TiposComodidades(TipoComodidadID)
 );
 
 
@@ -222,15 +224,16 @@ CREATE TABLE CamasHabitaciones (
 */
 CREATE TABLE FotosHabitacion (
     FotoID INT NOT NULL IDENTITY,
-    HabitacionID INT NOT NULL,
+    EmpresaID INT NOT NULL,
+    NumeroHabitacion INT NOT NULL,
     Foto VARCHAR(16) NOT NULL,
 
     --Restricciones
     CONSTRAINT PK_Foto PRIMARY KEY (FotoID),
-    CONSTRAINT FK_Fotos_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+    CONSTRAINT FK_Fotos_Habitacion FOREIGN KEY (EmpresaID,NumeroHabitacion) REFERENCES Habitaciones(EmpresaID,NumeroHabitacion),
 
     --Formato: Se valida extension y que al menos tenga un caracter aparte de los 4 de extension
-    CONSTRAINT UQ_Foto UNIQUE (LEN(Foto) > 4 AND (Foto LIKE '%.jpg' OR Foto LIKE '%.jpeg' OR Foto LIKE '%.png')
+    CONSTRAINT CHK_Foto CHECK (LEN(Foto) > 4 AND (Foto LIKE '%.jpg' OR Foto LIKE '%.jpeg' OR Foto LIKE '%.png')
 );
 
 
@@ -257,39 +260,40 @@ CREATE TABLE Cliente (
 
     -- Restriciones
     CONSTRAINT PK_Cliente PRIMARY KEY (ClienteID),
-    CONSTRAINT UQ_Cliente_ID UNIQUE (Identificacion)
+    CONSTRAINT UQ_Cliente_ID UNIQUE (Identificacion),
 
     --Fecha entre 1990 y la fecha de hoy (Evitar fechas futuras)
-    CONSTRAINT CHK_NacimientoClient CHECK (FechaNacimiento BETWEEN '1900-01-01' AND GETDATE())
+    CONSTRAINT CHK_NacimientoClient CHECK (FechaNacimiento BETWEEN '1900-01-01' AND GETDATE()),
 
-/*
+
     CONSTRAINT CHK_TipoIdentificacion
-        CHECK (TipoIdentificacion IN ('CEDULA', 'DIMEX', 'PASAPORTE','LicenciaDeConducir'),
+        CHECK (TipoIdentificacion IN ('CEDULA', 'DIMEX', 'PASAPORTE','LicenciaDeConducir')),
 
     CONSTRAINT CHK_IdentificacionCliente CHECK (
     CASE 
         -- Cédula física (9 dígitos)
-        WHEN TipoID = CEDULA 
+        WHEN TipoIdentificacion = 'CEDULA'
              AND Identificacion NOT LIKE '%[^0-9]%' 
              AND LEN(Identificacion) = 9 THEN 1
         
         -- Pasaporte (alfanumérico 6–15)
-        WHEN TipoID = PASAPORTE
+        WHEN TipoIdentificacion = 'PASAPORTE'
              AND Identificacion NOT LIKE '%[^A-Za-z0-9]%' 
              AND LEN(Identificacion) BETWEEN 6 AND 15 THEN 1
         
         -- DIMEX (11–12 dígitos)
-        WHEN TipoID = DIMEX
+        WHEN TipoIdentificacion = 'DIMEX'
              AND Identificacion NOT LIKE '%[^0-9]%' 
              AND LEN(Identificacion) BETWEEN 11 AND 12 THEN 1
         
         -- Licencia de conducir (9 alfanuméricos)
-        WHEN TipoID = LicenciaDeConducir
+        WHEN TipoIdentificacion = 'LicenciaDeConducir'
              AND Identificacion NOT LIKE '%[^A-Za-z0-9]%' 
              AND LEN(Identificacion) = 9 THEN 1
-        
-*/
 
+        ELSE 0
+        END = 1
+     )        
 );
 
 CREATE TABLE Cliente_Telefonos (
@@ -297,11 +301,11 @@ CREATE TABLE Cliente_Telefonos (
     Telefono VARCHAR(32) NOT NULL,
     -- Restriciones
     CONSTRAINT PK_Cliente_Telefonos PRIMARY KEY (ClienteID, Telefono),
-    CONSTRAINT FK_Telefonos_Cliente FOREIGN KEY (ClienteID) REFERENCES Cliente(ClienteID)
+    CONSTRAINT FK_Telefonos_Cliente FOREIGN KEY (ClienteID) REFERENCES Cliente(ClienteID),
 
     
     --Formato: +[Caracteres Numericos] y de un largo entre 7 y 15 digitos
-    CONSTRAINT CHK_TelefonoHotelera CHECK (TelefonoNum LIKE '+[0-9]%' AND LEN(TelefonoNum) BETWEEN 7 and 15)
+    CONSTRAINT CHK_TelefonoHotelera CHECK (Telefono LIKE '+[0-9]%' AND LEN(Telefono) BETWEEN 7 and 15)
 );
 
 
@@ -309,13 +313,15 @@ CREATE TABLE Cliente_Telefonos (
 --Comienza entidad Reserva
 
 CREATE TABLE Reserva (
+
     ReservaID INT IDENTITY,
     ClienteID INT NOT NULL,
-    HabitacionID INT NOT NULL,
+    EmpresaID INT NOT NULL,
+    NumeroHabitacion INT NOT NULL,
 
     --Aqui se podria usar DATETIME, pero lo separe porque asi esta en el diagrama
     FechaEntrada DATE NOT NULL, -- formato: YYYY-MM-DD 
-    HoraEntrada TIME DEFAULT 14:00:00,  -- formato: HH:MM:SS
+    HoraEntrada TIME DEFAULT '14:00:00',  -- formato: HH:MM:SS
     CantPersonas INT DEFAULT 1,
     PoseeVehiculo BIT DEFAULT 0,
     NumeroDeNoches INT NOT NULL,
@@ -323,7 +329,7 @@ CREATE TABLE Reserva (
     -- Restriciones
     CONSTRAINT PK_Reserva PRIMARY KEY (ReservaID),
     CONSTRAINT FK_Reserva_Cliente FOREIGN KEY (ClienteID) REFERENCES Cliente(ClienteID),
-    CONSTRAINT FK_Reserva_Habitacion FOREIGN KEY (HabitacionID) REFERENCES Habitaciones(HabitacionID),
+    CONSTRAINT FK_Reserva_Habitacion FOREIGN KEY (EmpresaID,NumeroHabitacion) REFERENCES Habitaciones(EmpresaID,NumeroHabitacion),
 
     CONSTRAINT CHK_CantPersonasReserva CHECK (CantPersonas > 1),
     CONSTRAINT CHK_CantNochesReserva CHECK (NumeroDeNoches >= 1),
@@ -385,13 +391,10 @@ CREATE TABLE EmpresasRecreativas (
     OtrasSenas VARCHAR(MAX),
 
     -- Restriciones
-    CONSTRAINT PK_EmpresaRecreativa PRIMARY KEY (EmpresaID)
-    CONSTRAINT CHK_Correo_Recreativa CHECK (CorreoElectronico LIKE '%@%.%')
-    CONSTRAINT CHK_JuridicaRecreativa CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12)
-
-    CONSTRAINT CHK_TelefonoRecreativa CHECK (TelefonoNum BETWEEN 56020000000 and 56099999999)
-    CONSTRAINT
-
+    CONSTRAINT PK_EmpresaRecreativa PRIMARY KEY (EmpresaID),
+    CONSTRAINT CHK_Correo_Recreativa CHECK (CorreoElectronico LIKE '%@%.%'),
+    CONSTRAINT CHK_JuridicaRecreativa CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12),
+    CONSTRAINT CHK_TelefonoRecreativa CHECK (Telefono BETWEEN 56020000000 and 56099999999)
 
 );
 

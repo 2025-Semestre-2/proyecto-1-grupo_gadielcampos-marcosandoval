@@ -18,6 +18,20 @@ GO
 USE SistemaHotelero
 GO
 
+CREATE TABLE Usuario (
+    UsuarioID INT IDENTITY,
+    NombreUsuario VARCHAR(32) NOT NULL,
+    Contrasena VARCHAR(32) NOT NULL,
+    TipoUsuario VARCHAR(16) NOT NULL,
+
+    --Restricciones
+    CONSTRAINT PK_UsuarioID PRIMARY KEY (UsuarioID),
+    CONSTRAINT CHK_ContrasenaUsuario CHECK (LEN(Contrasena) >= 8 AND Contrasena LIKE '%[^A-Za-z0-9]%'),
+    Constraint CHK_TipoUsuario CHECK 
+    (TipoUsuario = 'EmpresaRecreativa' OR TipoUsuario = 'EmpresaHotelera' OR TipoUsuario = 'Cliente')
+);
+
+
 CREATE TABLE TiposHoteles(
     TipoHotelID INT IDENTITY,
     Nombre VARCHAR (128) NOT NULL UNIQUE,
@@ -51,6 +65,7 @@ CREATE TABLE Servicios (
 
 
 CREATE TABLE EmpresasHoteleras (
+    UsuarioID INT NOT NULL,
     EmpresaID INT IDENTITY,
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
@@ -65,6 +80,7 @@ CREATE TABLE EmpresasHoteleras (
     -- Restriciones
     CONSTRAINT PK_EmpresaHotelera PRIMARY KEY (EmpresaID),
     CONSTRAINT FK_Tipo_Empresa FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID),
+    CONSTRAINT FK_UsuarioHotelero FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID),
 
     CONSTRAINT CHK_JuridicaHotelera CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12),
     CONSTRAINT CHK_Correo_Hotelera CHECK (CorreoElectronico LIKE '%@%.%')
@@ -240,9 +256,11 @@ CREATE TABLE FotosHabitacion (
 --Comienza entidad cliente
 
 CREATE TABLE Cliente (
+    UsuarioID INT NOT NULL,
     ClienteID INT IDENTITY,
     TipoIdentificacion VARCHAR(32) NOT NULL,
     Identificacion VARCHAR(64) NOT NULL,
+    Contrasena VARCHAR(32) NOT NULL,
 
     FechaNacimiento DATE, -- formato: YYYY-MM-DD
     PaisResidencia VARCHAR(64),
@@ -265,6 +283,7 @@ CREATE TABLE Cliente (
     --Fecha entre 1990 y la fecha de hoy (Evitar fechas futuras)
     CONSTRAINT CHK_NacimientoClient CHECK (FechaNacimiento BETWEEN '1900-01-01' AND GETDATE()),
 
+    CONSTRAINT FK_UsuarioCliente FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID),
 
     CONSTRAINT CHK_TipoIdentificacion
         CHECK (TipoIdentificacion IN ('CEDULA', 'DIMEX', 'PASAPORTE','LicenciaDeConducir')),
@@ -375,6 +394,7 @@ CREATE TABLE TipoActividad (
 );
 
 CREATE TABLE EmpresasRecreativas (
+    UsuarioID INT NOT NULL,
     EmpresaID INT IDENTITY,
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
@@ -394,8 +414,8 @@ CREATE TABLE EmpresasRecreativas (
     CONSTRAINT PK_EmpresaRecreativa PRIMARY KEY (EmpresaID),
     CONSTRAINT CHK_Correo_Recreativa CHECK (CorreoElectronico LIKE '%@%.%'),
     CONSTRAINT CHK_JuridicaRecreativa CHECK (CedulaJuridica LIKE '3-1[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]' and LEN(CedulaJuridica) = 12),
-    CONSTRAINT CHK_TelefonoRecreativa CHECK (Telefono BETWEEN 56020000000 and 56099999999)
-
+    CONSTRAINT CHK_TelefonoRecreativa CHECK (Telefono BETWEEN 56020000000 and 56099999999),
+    CONSTRAINT FK_UsuarioRecreativa FOREIGN KEY (UsuarioID) REFERENCES Usuario(UsuarioID),
 );
 
 

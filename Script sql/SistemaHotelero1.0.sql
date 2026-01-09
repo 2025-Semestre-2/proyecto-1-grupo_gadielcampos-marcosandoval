@@ -249,7 +249,7 @@ CREATE TABLE FotosHabitacion (
     CONSTRAINT FK_Fotos_Habitacion FOREIGN KEY (EmpresaID,NumeroHabitacion) REFERENCES Habitaciones(EmpresaID,NumeroHabitacion),
 
     --Formato: Se valida extension y que al menos tenga un caracter aparte de los 4 de extension
-    CONSTRAINT CHK_Foto CHECK (LEN(Foto) > 4 AND (Foto LIKE '%.jpg' OR Foto LIKE '%.jpeg' OR Foto LIKE '%.png')
+    CONSTRAINT CHK_Foto CHECK (LEN(Foto) > 4 AND (Foto LIKE '%.jpg' OR Foto LIKE '%.jpeg' OR Foto LIKE '%.png'))
 );
 
 
@@ -324,7 +324,7 @@ CREATE TABLE Cliente_Telefonos (
 
     
     --Formato: +[Caracteres Numericos] y de un largo entre 7 y 15 digitos
-    CONSTRAINT CHK_TelefonoHotelera CHECK (Telefono LIKE '+[0-9]%' AND LEN(Telefono) BETWEEN 7 and 15)
+    CONSTRAINT CHK_TelefonoCliente CHECK (Telefono LIKE '+[0-9]%' AND LEN(Telefono) BETWEEN 7 and 15)
 );
 
 

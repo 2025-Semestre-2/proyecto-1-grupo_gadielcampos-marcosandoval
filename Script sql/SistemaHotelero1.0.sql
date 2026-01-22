@@ -66,17 +66,17 @@ CREATE TABLE Servicios (
 
 CREATE TABLE EmpresasHoteleras (
     UsuarioID INT NOT NULL,
-    EmpresaID INT IDENTITY,
+    EmpresaID INT IDENTITY NOT NULL,
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
     Tipo INT NOT NULL,
     CorreoElectronico VARCHAR(256) UNIQUE NOT NULL,
     -- Dirección (Atributo Compuesto Expandido)
-    Provincia VARCHAR(64),
-    Canton VARCHAR(64),
-    Distrito VARCHAR(64),
-    Barrio VARCHAR(64),
-    OtrasSenas VARCHAR(MAX),
+    Provincia VARCHAR(64) NOT NULL,
+    Canton VARCHAR(64) NOT NULL,
+    Distrito VARCHAR(64) NOT NULL,
+    Barrio VARCHAR(64) NOT NULL,
+    OtrasSenas VARCHAR(MAX) NOT NULL,
     -- Restriciones
     CONSTRAINT PK_EmpresaHotelera PRIMARY KEY (EmpresaID),
     CONSTRAINT FK_Tipo_Empresa FOREIGN KEY (Tipo) REFERENCES TiposHoteles(TipoHotelID),
@@ -188,9 +188,9 @@ CREATE TABLE Habitaciones(
     TipoHabitacionID INT NOT NULL,
 
     Precio DECIMAL(10, 2) NOT NULL,
-    Estado VARCHAR(32) DEFAULT 'Activo',
-    Nombre VARCHAR(128),
-    Descripcion VARCHAR(256),
+    Estado VARCHAR(32) DEFAULT 'Activo' NOT NULL,
+    Nombre VARCHAR(128) NOT NULL,
+    Descripcion VARCHAR(256) NOT NULL,
 
     -- Restriciones
     CONSTRAINT PK_Habitacion PRIMARY KEY (EmpresaID,NumeroHabitacion),
@@ -257,7 +257,7 @@ CREATE TABLE FotosHabitacion (
 
 CREATE TABLE Cliente (
     UsuarioID INT NOT NULL,
-    ClienteID INT IDENTITY,
+    ClienteID INT IDENTITY NOT NULL,
     TipoIdentificacion VARCHAR(32) NOT NULL,
     Identificacion VARCHAR(64) NOT NULL,
     Contrasena VARCHAR(32) NOT NULL,
@@ -272,9 +272,9 @@ CREATE TABLE Cliente (
     SegundoApellido VARCHAR(64),
 
     -- Dirección
-    Provincia VARCHAR(64),
-    Canton VARCHAR(64),
-    Distrito VARCHAR(64),
+    Provincia VARCHAR(64) NOT NULL,
+    Canton VARCHAR(64) NOT NULL,
+    Distrito VARCHAR(64) NOT NULL,
 
     -- Restriciones
     CONSTRAINT PK_Cliente PRIMARY KEY (ClienteID),
@@ -340,9 +340,9 @@ CREATE TABLE Reserva (
 
     --Aqui se podria usar DATETIME, pero lo separe porque asi esta en el diagrama
     FechaEntrada DATE NOT NULL, -- formato: YYYY-MM-DD 
-    HoraEntrada TIME DEFAULT '14:00:00',  -- formato: HH:MM:SS
-    CantPersonas INT DEFAULT 1,
-    PoseeVehiculo BIT DEFAULT 0,
+    HoraEntrada TIME DEFAULT '14:00:00' NOT NULL,  -- formato: HH:MM:SS
+    CantPersonas INT DEFAULT 1 NOT NULL,
+    PoseeVehiculo BIT DEFAULT 0 NOT NULL,
     NumeroDeNoches INT NOT NULL,
 
     -- Restriciones
@@ -366,9 +366,9 @@ CREATE TABLE Factura (
     NumeroDeFactura INT NOT NULL,
 
     FormatoDePago VARCHAR(32) NOT NULL,
-    FechaFacturacion DATETIME DEFAULT GETDATE(),
+    FechaFacturacion DATETIME DEFAULT GETDATE() NOT NULL,
 
-    CargosAdicionales INT DEFAULT 0,
+    CargosAdicionales INT DEFAULT 0 NOT NULL,
 
     --Restricciones
     CONSTRAINT PK_Factura PRIMARY KEY (FacturaID),
@@ -395,7 +395,7 @@ CREATE TABLE TipoActividad (
 
 CREATE TABLE EmpresasRecreativas (
     UsuarioID INT NOT NULL,
-    EmpresaID INT IDENTITY,
+    EmpresaID INT IDENTITY NOT NULL,
     CedulaJuridica VARCHAR(64) NOT NULL UNIQUE,
     Nombre VARCHAR(100) NOT NULL,
 
@@ -405,10 +405,10 @@ CREATE TABLE EmpresasRecreativas (
     NombreContacto VARCHAR(64) NOT NULL,
 
     -- Dirección (Atributo Compuesto Expandido)
-    Provincia VARCHAR(64),
-    Canton VARCHAR(64),
-    Distrito VARCHAR(64),
-    OtrasSenas VARCHAR(MAX),
+    Provincia VARCHAR(64) NOT NULL,
+    Canton VARCHAR(64) NOT NULL,
+    Distrito VARCHAR(64) NOT NULL,
+    OtrasSenas VARCHAR(MAX) NOT NULL,
 
     -- Restriciones
     CONSTRAINT PK_EmpresaRecreativa PRIMARY KEY (EmpresaID),

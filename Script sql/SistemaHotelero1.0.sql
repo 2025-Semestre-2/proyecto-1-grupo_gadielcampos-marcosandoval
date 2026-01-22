@@ -26,13 +26,13 @@ CREATE TABLE Usuario (
 
     --Restricciones
     CONSTRAINT PK_UsuarioID PRIMARY KEY (UsuarioID),
-    CONSTRAINT CHK_ContrasenaUsuario CHECK (LEN(Contrasena) >= 8 AND Contrasena LIKE '%[^A-Za-z0-9]%'),
+    CONSTRAINT CHK_ContrasenaUsuario CHECK (LEN(Contrasena) >= 8 AND Contrasena NOT LIKE '%[^A-Za-z0-9]%'),
     Constraint CHK_TipoUsuario CHECK 
     (TipoUsuario = 'EmpresaRecreativa' OR TipoUsuario = 'EmpresaHotelera' OR TipoUsuario = 'Cliente')
 );
 
 
-CREATE TABLE TiposHoteles(
+CREATE TABLE TiposHoteles (
     TipoHotelID INT IDENTITY,
     Nombre VARCHAR (128) NOT NULL UNIQUE,
     -- Restriciones
